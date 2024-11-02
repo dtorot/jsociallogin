@@ -1,2 +1,2 @@
-# jsocialextplugin
+# jsociallogin
 social login
