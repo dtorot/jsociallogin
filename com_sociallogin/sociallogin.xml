@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="component" version="4.0" client="site" method="upgrade">
+    <name>Social Login</name>
+    <author>David Toro Triana</author>
+    <creationDate>2024-01-01</creationDate>
+    <version>0.0.1</version>
+    <description>Social Login Integration Component</description>
+
+    <files>
+        <filename component="1">sociallogin.php</filename>
+        <filename>controller.php</filename>
+        <folder>controllers</folder>
+    </files>
+
+    <!-- Admin Section -->
+    <administration>
+        <menu>Social Login</menu>
+
+        <files>
+            <folder>admin</folder>
+            <filename>admin.sociallogin.php</filename>
+            <filename>controller.php</filename>
+        </files>
+
+        <!-- Define menu and configuration views for the admin area -->
+        <submenu>
+            <menu link="option=com_sociallogin" view="dashboard">Dashboard</menu>
+            <menu link="option=com_sociallogin&view=config">Configuration</menu>
+        </submenu>
+    </administration>
+
+    <menu link="option=com_sociallogin">Social Login</menu>
+</extension>

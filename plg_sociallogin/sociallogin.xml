@@ -1,0 +1,17 @@
+<extension type="plugin" group="authentication" version="4.0" method="upgrade">
+    <name>OpenSAI Social Login</name>
+    <version>0.0.1</version>
+    <author>David Toro Triana</author>
+    <files>
+        <filename plugin="sociallogin">sociallogin.php</filename>
+    </files>
+    <config>
+    <fields name="params">
+        <fieldset name="basic">
+            <field name="google_client_id" type="text" label="Google Client ID" description="Enter your Google Client ID" />
+            <field name="google_client_secret" type="password" label="Google Client Secret" description="Enter your Google Client Secret" />
+            <field name="google_client_redirect_uri" type="text" label="Google Client Redirect URI" description="URL Google redirects back to after login" />
+        </fieldset>
+    </fields>
+</config>
+</extension>
