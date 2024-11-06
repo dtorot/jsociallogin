@@ -10,6 +10,9 @@ use Joomla\CMS\Helper\ModuleHelper;
 use Joomla\Session\SessionInterface;
 use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\User\User;
+use Joomla\CMS\User\UserHelper;
+use Joomla\CMS\Authentication\Authentication;
+use Joomla\CMS\Event\AbstractEvent;
 
 class PlgSystemSocialLoginCallBack extends CMSPlugin
 {
@@ -36,9 +39,13 @@ class PlgSystemSocialLoginCallBack extends CMSPlugin
 
     public function onAfterRoute()
     {
-        Log::add('onAfterRoute...', Log::DEBUG, 'sociallogincallback');
+        //Log::add('onAfterRoute...', Log::DEBUG, 'sociallogincallback');
 
         $app = Factory::getApplication();
+        $input = $app->input;
+        $uri = Uri::getInstance();
+        $path = $uri->getPath();
+        Log::add('onAfterRoute [' . $path . ']', Log::DEBUG, 'sociallogincallback');
 
         // Only execute in the frontend
         if (!$app->isClient('site')) {
@@ -211,6 +218,8 @@ class PlgSystemSocialLoginCallBack extends CMSPlugin
 
     private function loginOrRegisterUser($email, $name, &$response)
     {
+        // Initialize application
+        $app = Factory::getApplication();        
         
         // Initialize Joomla's database object
         $db = Factory::getDbo();
@@ -225,23 +234,61 @@ class PlgSystemSocialLoginCallBack extends CMSPlugin
 
 
         if ($result) {
+            Log::add('loginOrRegisterUser, User exists!, must be authenticated...', Log::DEBUG, 'sociallogincallback');
+
+            //$options = ['remember' => true];
+            $options = ['silent' => true];
+
+            $token = UserHelper::genRandomPassword(32); 
+            $_SESSION['oauth_token'] = $token;
+
             // Load the user object by ID if a user with that email exists
             $user = new User($result->id);
+            Log::add('loginOrRegisterUser, user id [' . $user->id . ']', Log::DEBUG, 'sociallogincallback');
+            Log::add('loginOrRegisterUser, user name [' . $user->name . ']', Log::DEBUG, 'sociallogincallback');
+            Log::add('loginOrRegisterUser, user username [' . $user->username . ']', Log::DEBUG, 'sociallogincallback');
+            Log::add('loginOrRegisterUser, user username [' . $user->password . ']', Log::DEBUG, 'sociallogincallback');
+
+            // Manual session start
+            $credentials = ['username' => $user->username, 'password' => $token]; // Password is not needed
+            $result = $app->login($credentials, $options);
+            //$response->status = JAuthentication::STATUS_SUCCESS;
+            
+            /*if ($result === true) {
+                Log::add('loginOrRegisterUser, User [' . $user->username . '] logged in successfully!', Log::DEBUG, 'sociallogincallback');
+                return true;
+            } else {
+                Log::add('loginOrRegisterUser, Failed to log in the user [' . $user->username . ']', Log::DEBUG, 'sociallogincallback');
+                return false;
+            }*/            
+
         } else {
+            Log::add('loginOrRegisterUser, User doesnt exists!, must be created...', Log::DEBUG, 'sociallogincallback');
             // Handle the case where no user is found
             $user = null;
+
         }
         
+        
+        //if ($user) {
+            // Prepare credentials
+            //$credentials = ['username' => $username, 'password' => $password];
 
-        if ($user) {
+
             // User exists, log them in
+            /*
             $response->status = JAuthentication::STATUS_SUCCESS;
             $response->username = $user->username;
             $response->email = $user->email;
             $response->fullname = $user->name;
             $response->password_clear = ''; // Not used
-        } else {
+            */
+            
+
+        //} else {
+            
             // User doesn't exist, register them
+            /*
             $userData = [
                 'name' => $name,
                 'username' => $email,
@@ -262,7 +309,8 @@ class PlgSystemSocialLoginCallBack extends CMSPlugin
             $response->email = $user->email;
             $response->fullname = $user->name;
             $response->password_clear = '';
-        }
+            */
+        //}
     }
 
     private function authenticateWithFacebook($credentials, &$response)

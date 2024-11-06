@@ -6,6 +6,8 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\Router\Route;
+
 
 class PlgAuthenticationSociallogin extends CMSPlugin
 {
@@ -63,14 +65,38 @@ class PlgAuthenticationSociallogin extends CMSPlugin
     {   
         
         Log::add('onUserAuthenticate', Log::DEBUG, 'sociallogin');
+        Log::add('onUserAuthenticate, token [' . $credentials['password'] . ']', Log::DEBUG, 'sociallogin');
+        
         // Validate Joomla security token
+        /*
         if (!Session::checkToken('post')) { // Using 'get' because the token is in the URL
             $response->status = JAuthentication::STATUS_FAILURE;
             //$response->error_message = 'Invalid security token';
             Log::add('onUserAuthenticate, Invalid security token', Log::DEBUG, 'sociallogin');
             return;
+        }*/
+        //if ($_SESSION['oauth_token'] === $credentials['token']) { // Using 'get' because the token is in the URL
+        if ($credentials['password']) { // Using 'get' because the token is in the URL
+            $response->status = JAuthentication::STATUS_SUCCESS;
+            //$response->error_message = 'Invalid security token';
+            $response->username = $user->username;
+            $response->email = $user->email;
+            $response->fullname = $user->name;
+            //$response->message = 'Sesión iniciada...';
+            //header("Location: https://opensai.org/bitacora");
+            //die();
+            Log::add('onUserAuthenticate, User logged in successfully...', Log::DEBUG, 'sociallogin');
+            
+            /*$app = Factory::getApplication();
+
+            // URL of the user profile or desired page
+            $userProfileUrl = Route::_('/bitacora');
+
+            // Redirect to the user profile
+            $app->redirect($userProfileUrl);*/
+            return;
         }
-        
+
         
         // Detect the login provider
         //if ($credentials['provider'] === 'google') {
