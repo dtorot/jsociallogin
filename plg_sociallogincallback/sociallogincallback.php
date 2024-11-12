@@ -42,16 +42,18 @@ class PlgSystemSocialLoginCallBack extends CMSPlugin
         //Log::add('onAfterRoute...', Log::DEBUG, 'sociallogincallback');
 
         $app = Factory::getApplication();
-        $input = $app->input;
+        //$input = $app->input;
         $uri = Uri::getInstance();
         $path = $uri->getPath();
-        Log::add('onAfterRoute [' . $path . ']', Log::DEBUG, 'sociallogincallback');
-
+        
         // Only execute in the frontend
         if (!$app->isClient('site')) {
             return;
         }
         
+        Log::add('onAfterRoute [' . $path . ']', Log::DEBUG, 'sociallogincallback');
+        //$jtoken=$_SESSION['oauth_token'];
+        //Log::add('loginOrRegisterUser,  [' . $user->id . ']', Log::DEBUG, 'sociallogincallback');
         // Check if the current request is the OAuth callback
         /*$app = Factory::getApplication();
 
@@ -67,9 +69,8 @@ class PlgSystemSocialLoginCallBack extends CMSPlugin
             Log::add('onAfterRoute get /profile...', Log::DEBUG, 'sociallogincallback');
             // Optionally, stop further execution
             //$app->close();
-        }*/
+        }*/        
         
-
         if (isset($_GET['code'])) {
             Log::add('onAfterRoute, GET code', Log::DEBUG, 'sociallogincallback');
             
@@ -90,13 +91,15 @@ class PlgSystemSocialLoginCallBack extends CMSPlugin
             $client->addScope('profile');          
             
             $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
-            Log::add('onAfterRoute, google code [' . implode(", ",$token) . ']', Log::DEBUG, 'sociallogincallback');
+            Log::add('onAfterRoute, google token [' . implode(", ",$token) . ']', Log::DEBUG, 'sociallogincallback');
+            //Log::add('onAfterRoute, google code [' .  http_build_query($token,'',', ') . ']', Log::DEBUG, 'sociallogincallback');
 
-                    
-            if (isset($token['error'])) {
-                $response->status = JAuthentication::STATUS_FAILURE;
-                $response->error_message = 'Failed Authentication with Google service';
-                Log::add('onAfterRoute, error in google token [' . $token['error'] . ']', Log::DEBUG, 'sociallogincallback');
+            if (array_key_exists('error', $token)) {        
+            //if (isset($token['error'])) {
+                //$response->status = JAuthentication::STATUS_FAILURE;
+                //$response->error_message = 'Failed Authentication with Google service';
+                //Log::add('onAfterRoute, error in google token [' . $token['error'] . ']', Log::DEBUG, 'sociallogincallback');
+                Log::add('onAfterRoute, Failed Authentication with Google service [' .  http_build_query($token,'',', ') . ']', Log::DEBUG, 'sociallogincallback');
                 return;
             }
 
@@ -113,8 +116,34 @@ class PlgSystemSocialLoginCallBack extends CMSPlugin
             $name = $google_account_info->name;
             Log::add('onAfterRoute, google name [' . $name . ']', Log::DEBUG, 'sociallogincallback');
 
-            // Find or create the user in Joomla
-            $this->loginOrRegisterUser($email, $name, $response);            
+            //validate CSRFToken
+            $input = Factory::getApplication()->input;
+            //$input = $app->input;
+            $state = $input->get('state', '', 'string');
+            parse_str($state, $stateParams);
+
+            $csrfTokenName = $stateParams['csrfTokenName'] ?? '';
+            Log::add('onAfterRoute, csrfTokenName [' . $csrfTokenName . ']', Log::DEBUG, 'sociallogincallback');
+            $csrfTokenValue = $stateParams['csrfTokenValue'] ?? '';            
+            Log::add('onAfterRoute, csrfTokenValue [' . $csrfTokenValue . ']', Log::DEBUG, 'sociallogincallback');
+
+            
+            // Validate the CSRF token
+            if (empty($csrfTokenName) || $csrfTokenValue !== '1' || !Session::checkToken(true)) {
+            //if (empty($csrfTokenName) || $csrfTokenValue !== '1') {
+                // Invalid CSRF token; handle the error
+                Log::add('onAfterRoute, Invalid CSRF token. Possible CSRF attack detected returnedToken [' . $csrfTokenName . ']', Log::DEBUG, 'sociallogincallback');
+                return false;
+            }else{
+                // Find or create the user in Joomla
+                //$this->loginOrRegisterUser($email, $name, $response);            
+                Log::add('onAfterRoute, CSRF Token [' . $csrfTokenName . ']', Log::DEBUG, 'sociallogincallback');
+            }
+
+
+            
+
+            
         }
     }
     
@@ -239,19 +268,27 @@ class PlgSystemSocialLoginCallBack extends CMSPlugin
             //$options = ['remember' => true];
             $options = ['silent' => true];
 
-            $token = UserHelper::genRandomPassword(32); 
-            $_SESSION['oauth_token'] = $token;
+            //$token = UserHelper::genRandomPassword(32); 
+            //$_SESSION['oauth_token'] = $token;
+            //Log::add('loginOrRegisterUser,  [' . $user->id . ']', Log::DEBUG, 'sociallogincallback');
 
             // Load the user object by ID if a user with that email exists
             $user = new User($result->id);
             Log::add('loginOrRegisterUser, user id [' . $user->id . ']', Log::DEBUG, 'sociallogincallback');
             Log::add('loginOrRegisterUser, user name [' . $user->name . ']', Log::DEBUG, 'sociallogincallback');
             Log::add('loginOrRegisterUser, user username [' . $user->username . ']', Log::DEBUG, 'sociallogincallback');
-            Log::add('loginOrRegisterUser, user username [' . $user->password . ']', Log::DEBUG, 'sociallogincallback');
+            Log::add('loginOrRegisterUser, user password [' . $user->password . ']', Log::DEBUG, 'sociallogincallback');
 
             // Manual session start
             $credentials = ['username' => $user->username, 'password' => $token]; // Password is not needed
+
+            //if (!Session::checkToken($returnedCSRFToken)) {
+                // Token is invalid; handle the error
+            //    Log::add('loginOrRegisterUser, Invalid Joomla Token [' . $returnedCSRFToken . ']', Log::DEBUG, 'sociallogincallback');
+                //return false;
+            //}else{
             $result = $app->login($credentials, $options);
+            //}
             //$response->status = JAuthentication::STATUS_SUCCESS;
             
             /*if ($result === true) {

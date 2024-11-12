@@ -65,7 +65,21 @@ class PlgAuthenticationSociallogin extends CMSPlugin
     {   
         
         Log::add('onUserAuthenticate', Log::DEBUG, 'sociallogin');
-        Log::add('onUserAuthenticate, token [' . $credentials['password'] . ']', Log::DEBUG, 'sociallogin');
+
+        $csrfTokenName = Session::getFormToken();
+        $csrfTokenValue = '1';
+
+        $state = http_build_query([
+            'csrfTokenName' => $csrfTokenName,
+            'csrfTokenValue' => $csrfTokenValue,
+        ]);
+        
+        // Retrieve the CSRF token value from the POST request
+        //$input = Factory::getApplication()->input;
+        //$jtoken = $input->get($csrfTokenName, '', 'string');
+        
+        Log::add('onUserAuthenticate, JTokenName[' . $csrfTokenName . ']', Log::DEBUG, 'sociallogin');
+        //Log::add('onUserAuthenticate, password [' . $credentials['password'] . ']', Log::DEBUG, 'sociallogin');
         
         // Validate Joomla security token
         /*
@@ -76,7 +90,7 @@ class PlgAuthenticationSociallogin extends CMSPlugin
             return;
         }*/
         //if ($_SESSION['oauth_token'] === $credentials['token']) { // Using 'get' because the token is in the URL
-        if ($credentials['password']) { // Using 'get' because the token is in the URL
+        if ($credentials['password']) { // Using 'get' because the token is in the URL            
             $response->status = JAuthentication::STATUS_SUCCESS;
             //$response->error_message = 'Invalid security token';
             $response->username = $user->username;
@@ -85,7 +99,13 @@ class PlgAuthenticationSociallogin extends CMSPlugin
             //$response->message = 'Sesión iniciada...';
             //header("Location: https://opensai.org/bitacora");
             //die();
+            if (!Session::checkToken('post')) 
+                Log::add('onUserAuthenticate, NO token in POST method...', Log::DEBUG, 'sociallogin');
+            if (!Session::checkToken('get')) 
+                Log::add('onUserAuthenticate, NO token in GET method...', Log::DEBUG, 'sociallogin');
+            
             Log::add('onUserAuthenticate, User logged in successfully...', Log::DEBUG, 'sociallogin');
+
             
             /*$app = Factory::getApplication();
 
@@ -101,7 +121,7 @@ class PlgAuthenticationSociallogin extends CMSPlugin
         // Detect the login provider
         //if ($credentials['provider'] === 'google') {
         if (isset($_POST['provider']) && $_POST['provider'] === 'google') {
-            $this->authenticateWithGoogle($credentials, $response);
+            $this->authenticateWithGoogle($credentials, $state, $response);
         } elseif ($credentials['provider'] === 'facebook') {
             $this->authenticateWithFacebook($credentials, $response);
         } else {
@@ -111,7 +131,7 @@ class PlgAuthenticationSociallogin extends CMSPlugin
         }
     }
 
-    private function authenticateWithGoogle($credentials, &$response)
+    private function authenticateWithGoogle($credentials, $state, &$response)
     {
         // Use Google API client to authenticate
         // Load your Google client library and set credentials
@@ -123,7 +143,7 @@ class PlgAuthenticationSociallogin extends CMSPlugin
         $google_client_id = $this->params->get('google_client_id');
         Log::add('authenticateWithGoogle, google_client_id [' . $google_client_id . ']', Log::DEBUG, 'sociallogin');
         $google_client_secret = $this->params->get('google_client_secret');
-        Log::add('authenticateWithGoogle, $google_client_secret [' . $google_client_secret . ']', Log::DEBUG, 'sociallogin');
+        Log::add('authenticateWithGoogle, google_client_secret [' . $google_client_secret . ']', Log::DEBUG, 'sociallogin');
         $google_client_redirect_uri = $this->params->get('google_client_redirect_uri');
         Log::add('authenticateWithGoogle, google_client_redirect_uri [' . $google_client_redirect_uri . ']', Log::DEBUG, 'sociallogin');
 
@@ -140,7 +160,9 @@ class PlgAuthenticationSociallogin extends CMSPlugin
         $client->addScope('email');
         Log::add('authenticateWithGoogle, step [4]', Log::DEBUG, 'sociallogin');
         $client->addScope('profile');
-        Log::add('authenticateWithGoogle, step [5]', Log::DEBUG, 'sociallogin');
+        Log::add('authenticateWithGoogle, step [5]', Log::DEBUG, 'sociallogin');                
+        $client->setState($state);
+        Log::add('authenticateWithGoogle, JTokenValue [' . $state . ']', Log::DEBUG, 'sociallogin');
 
         $url = "http".(!empty($_SERVER['HTTPS'])?"s":"")."://".$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
         Log::add('authenticateWithGoogle, current url query ['. $url .']', Log::DEBUG, 'sociallogin');
