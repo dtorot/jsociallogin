@@ -34,20 +34,22 @@ class PlgAuthenticationSociallogin extends CMSPlugin
 
     public function onAfterRoute()
     {
-        Log::add('onAfterRoute...', Log::DEBUG, 'sociallogin');
+        //Log::add('onAfterRoute...', Log::DEBUG, 'sociallogin');
         // Check if the current request is the OAuth callback
+        /*
         $app = Factory::getApplication();
         $input = $app->input;
-        $uri = Uri::getInstance();
+        $uri = Uri::getInstance();*/
         
         //$path = $uri->getPath();
 
+        /*
         if ($uri->getPath() === '/profile') {
             // Call your custom function here
             Log::add('onAfterRoute get /profile...', Log::DEBUG, 'sociallogin');
             // Optionally, stop further execution
             $app->close();
-        }
+        }*/
 
         // Ensure we are handling the Google OAuth callback
         /*if (strpos($path,'/profile') !== false )
@@ -63,9 +65,17 @@ class PlgAuthenticationSociallogin extends CMSPlugin
     
     public function onUserAuthenticate($credentials, $options, &$response)
     {   
-        
+        //Factory::getSession()->start();
+        $app = JFactory::getApplication();
+        $app->getSession();
+        Log::add('Session object: ' . (Factory::getSession() ? 'Initialized' : 'Null'), Log::DEBUG, 'sociallogin');
         Log::add('onUserAuthenticate', Log::DEBUG, 'sociallogin');
 
+        $input = Factory::getApplication()->input;
+        $customParam = $input->get('myParam', '', 'string');
+        Log::add('Session state param: [' . $customParam . ']', Log::DEBUG, 'sociallogin');
+
+        // get csrf form token to send in the state array to google oauth service
         $csrfTokenName = Session::getFormToken();
         $csrfTokenValue = '1';
 
@@ -78,7 +88,7 @@ class PlgAuthenticationSociallogin extends CMSPlugin
         //$input = Factory::getApplication()->input;
         //$jtoken = $input->get($csrfTokenName, '', 'string');
         
-        Log::add('onUserAuthenticate, JTokenName[' . $csrfTokenName . ']', Log::DEBUG, 'sociallogin');
+        //Log::add('onUserAuthenticate, JTokenName[' . $csrfTokenName . ']', Log::DEBUG, 'sociallogin');
         //Log::add('onUserAuthenticate, password [' . $credentials['password'] . ']', Log::DEBUG, 'sociallogin');
         
         // Validate Joomla security token
@@ -90,23 +100,40 @@ class PlgAuthenticationSociallogin extends CMSPlugin
             return;
         }*/
         //if ($_SESSION['oauth_token'] === $credentials['token']) { // Using 'get' because the token is in the URL
-        if ($credentials['password']) { // Using 'get' because the token is in the URL            
+        if ($credentials['password']) { 
+            if (!Session::checkToken('post')) 
+                Log::add('onUserAuthenticate, NO token in POST method...', Log::DEBUG, 'sociallogin');
+            if (!Session::checkToken('get')) 
+                Log::add('onUserAuthenticate, NO token in GET method...', Log::DEBUG, 'sociallogin');
+            //$jtoken=$credentials['csrfTokenName'].'='.$credentials['csrfTokenValue'];
+            $jtoken=$credentials['csrfTokenName'];
+            Log::add('onUserAuthenticate, jtoken to start session ['. $jtoken . ']', Log::DEBUG, 'sociallogin');
+            $localcsrfTokenName = Session::getFormToken();
+            Log::add('onUserAuthenticate, local jtoken to start session ['. $localcsrfTokenName . ']', Log::DEBUG, 'sociallogin');
+            //if (!Session::checkToken($jtoken)) 
+            //if (!$app->checkToken($jtoken)) 
+            //    Log::add('onUserAuthenticate, jtoken passthrough does not work...', Log::DEBUG, 'sociallogin');
+
+
             $response->status = JAuthentication::STATUS_SUCCESS;
             //$response->error_message = 'Invalid security token';
             $response->username = $user->username;
             $response->email = $user->email;
             $response->fullname = $user->name;
             //$response->message = 'Sesión iniciada...';
-            //header("Location: https://opensai.org/bitacora");
             //die();
-            if (!Session::checkToken('post')) 
-                Log::add('onUserAuthenticate, NO token in POST method...', Log::DEBUG, 'sociallogin');
-            if (!Session::checkToken('get')) 
-                Log::add('onUserAuthenticate, NO token in GET method...', Log::DEBUG, 'sociallogin');
+           
             
             Log::add('onUserAuthenticate, User logged in successfully...', Log::DEBUG, 'sociallogin');
 
-            
+            //$app->enqueueMessage('Welcome back...', 'success');
+            $currentUri = Uri::getInstance();
+            $cleanUrl = $currentUri->toString(['scheme', 'host', 'path']);
+            Log::add('onUserAuthenticate, Clean Url ['. $cleanUrl . ']', Log::DEBUG, 'sociallogin');
+
+            //$cleanUrl = "/bitacora";
+            //$app->redirect(Route::_($cleanUrl, false));
+
             /*$app = Factory::getApplication();
 
             // URL of the user profile or desired page
@@ -114,6 +141,7 @@ class PlgAuthenticationSociallogin extends CMSPlugin
 
             // Redirect to the user profile
             $app->redirect($userProfileUrl);*/
+            //$app->redirect('/bitacora');
             return;
         }
 
