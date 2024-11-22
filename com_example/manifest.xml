@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="component" version="4.0" method="upgrade">
+    <name>com_example</name>
+    <version>1.0.0</version>
+    <description>A basic front-end component for Joomla 5.x</description>
+    <files>        
+        <folder>site/controllers</folder>
+        <folder>site/models</folder>
+        <folder>site/views</folder>
+        <filename>example.php</filename>
+    </files>
+    <administration>
+        <menu>Example Component</menu>
+        <files folder="admin">            
+            <filename>config.xml</filename>
+            <filename>example.xml</filename>
+        </files>
+    </administration>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field
+                    name="custom_string"
+                    type="text"
+                    label="Custom String"
+                    description="Enter a custom string parameter."
+                    default="Hello, Joomla!"
+                />
+            </fieldset>
+        </fields>
+    </config>
+</extension>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fieldset name="basic">
+        <field
+            name="custom_string"
+            type="text"
+            label="Custom String"
+            description="A custom string parameter for the component."
+        />
+    </fieldset>
+</form>
