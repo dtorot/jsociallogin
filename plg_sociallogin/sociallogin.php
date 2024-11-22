@@ -63,22 +63,23 @@ class PlgAuthenticationSociallogin extends CMSPlugin
         }*/
     }
     
+    //empty $options parameter must be used by joomla onUserAuthenticate declaration
     public function onUserAuthenticate($credentials, $options, &$response)
     {   
-        //Factory::getSession()->start();
+        Log::add('onUserAuthenticate', Log::DEBUG, 'sociallogin');
+        //Reviewing Session...
         $app = JFactory::getApplication();
         $app->getSession();
-        Log::add('Session object: ' . (Factory::getSession() ? 'Initialized' : 'Null'), Log::DEBUG, 'sociallogin');
-        Log::add('onUserAuthenticate', Log::DEBUG, 'sociallogin');
+        Log::add('Testing Session object: ' . (Factory::getSession() ? 'Initialized' : 'Null'), Log::DEBUG, 'sociallogin');        
 
-        $input = Factory::getApplication()->input;
+        /* $input = Factory::getApplication()->input;
         $customParam = $input->get('myParam', '', 'string');
-        Log::add('Session state param: [' . $customParam . ']', Log::DEBUG, 'sociallogin');
+        Log::add('Session state param: [' . $customParam . ']', Log::DEBUG, 'sociallogin'); */
 
-        // get csrf form token to send in the state array to google oauth service
+        // First Step: Always get the actual session CSRF token
         $csrfTokenName = Session::getFormToken();
         $csrfTokenValue = '1';
-
+        // save the CSRF values in the $state array to use with the Google OAuth Service
         $state = http_build_query([
             'csrfTokenName' => $csrfTokenName,
             'csrfTokenValue' => $csrfTokenValue,
@@ -100,6 +101,8 @@ class PlgAuthenticationSociallogin extends CMSPlugin
             return;
         }*/
         //if ($_SESSION['oauth_token'] === $credentials['token']) { // Using 'get' because the token is in the URL
+        
+        // Called after the Google OAuth authentication from SocialLoginCallBack plugin
         if ($credentials['password']) { 
             if (!Session::checkToken('post')) 
                 Log::add('onUserAuthenticate, NO token in POST method...', Log::DEBUG, 'sociallogin');
@@ -107,7 +110,7 @@ class PlgAuthenticationSociallogin extends CMSPlugin
                 Log::add('onUserAuthenticate, NO token in GET method...', Log::DEBUG, 'sociallogin');
             //$jtoken=$credentials['csrfTokenName'].'='.$credentials['csrfTokenValue'];
             $jtoken=$credentials['csrfTokenName'];
-            Log::add('onUserAuthenticate, jtoken to start session ['. $jtoken . ']', Log::DEBUG, 'sociallogin');
+            Log::add('onUserAuthenticate, returned jtoken to start session ['. $jtoken . ']', Log::DEBUG, 'sociallogin');
             $localcsrfTokenName = Session::getFormToken();
             Log::add('onUserAuthenticate, local jtoken to start session ['. $localcsrfTokenName . ']', Log::DEBUG, 'sociallogin');
             //if (!Session::checkToken($jtoken)) 
@@ -115,41 +118,57 @@ class PlgAuthenticationSociallogin extends CMSPlugin
             //    Log::add('onUserAuthenticate, jtoken passthrough does not work...', Log::DEBUG, 'sociallogin');
 
 
+            
+            //$response->error_message = 'Invalid security token';
+            $response->username = $user->username;
+            $response->email = $user->email;
+            $response->fullname = $user->name;
+            //$response->message = 'Sesión iniciada...';           
+            $response->status = JAuthentication::STATUS_SUCCESS;
+            
+            Log::add('onUserAuthenticate, User logged in successfully...', Log::DEBUG, 'sociallogin');
+
+            /* $credentials = ['started' => true, 'username' => $response->username]; 
+            $result = $app->login($credentials, ['silent' => false, 'return' => '/bitacora']);  */
+
+            //$app->enqueueMessage('Welcome back...', 'success');
+            /* $currentUri = Uri::getInstance();
+            $cleanUrl = $currentUri->toString(['scheme', 'host', 'path']);
+            Log::add('onUserAuthenticate, Clean Url ['. $cleanUrl . ']', Log::DEBUG, 'sociallogin'); */
+
+            //$cleanUrl = "/bitacora";
+            //$app->redirect(Route::_($cleanUrl, false));
+
+           
+
+            // URL of the user profile or desired page
+            //$userProfileUrl = Route::_('/bitacora');
+
+            // Redirect to the user profile
+            //$app->redirect($userProfileUrl);
+            //$app->redirect('/bitacora');
+            
+            return;
+        }
+
+/*         if ($credentials['started'] == true) {
             $response->status = JAuthentication::STATUS_SUCCESS;
             //$response->error_message = 'Invalid security token';
             $response->username = $user->username;
             $response->email = $user->email;
             $response->fullname = $user->name;
-            //$response->message = 'Sesión iniciada...';
-            //die();
-           
+            //$response->message = 'Sesión iniciada...';           
             
             Log::add('onUserAuthenticate, User logged in successfully...', Log::DEBUG, 'sociallogin');
-
-            //$app->enqueueMessage('Welcome back...', 'success');
-            $currentUri = Uri::getInstance();
-            $cleanUrl = $currentUri->toString(['scheme', 'host', 'path']);
-            Log::add('onUserAuthenticate, Clean Url ['. $cleanUrl . ']', Log::DEBUG, 'sociallogin');
-
-            //$cleanUrl = "/bitacora";
-            //$app->redirect(Route::_($cleanUrl, false));
-
-            /*$app = Factory::getApplication();
-
-            // URL of the user profile or desired page
-            $userProfileUrl = Route::_('/bitacora');
-
-            // Redirect to the user profile
-            $app->redirect($userProfileUrl);*/
-            //$app->redirect('/bitacora');
             return;
-        }
+        }  */
 
         
-        // Detect the login provider
+        // Detect the login provider (step 0 from the Joomla login module form)
         //if ($credentials['provider'] === 'google') {
         if (isset($_POST['provider']) && $_POST['provider'] === 'google') {
-            $this->authenticateWithGoogle($credentials, $state, $response);
+            Log::add('onUserAuthenticate, Google OAuth provider detected...', Log::DEBUG, 'sociallogin');
+            $this->authenticateWithGoogle($credentials, $state, $response);            
         } elseif ($credentials['provider'] === 'facebook') {
             $this->authenticateWithFacebook($credentials, $response);
         } else {
@@ -168,6 +187,7 @@ class PlgAuthenticationSociallogin extends CMSPlugin
 
         require_once __DIR__ . '/vendor/autoload.php'; // Load the Google Client Library
 
+        // Get the plugin Google OAuth configured params
         $google_client_id = $this->params->get('google_client_id');
         Log::add('authenticateWithGoogle, google_client_id [' . $google_client_id . ']', Log::DEBUG, 'sociallogin');
         $google_client_secret = $this->params->get('google_client_secret');
@@ -196,7 +216,7 @@ class PlgAuthenticationSociallogin extends CMSPlugin
         Log::add('authenticateWithGoogle, current url query ['. $url .']', Log::DEBUG, 'sociallogin');
         
         
-        // Check if there is a Google authorization code in the URL
+        // Check if there is a Google authorization code in the URL (returned of the Social Call Back plugin)
         if (isset($_GET['code'])) {
             Log::add('authenticateWithGoogle, step [6]', Log::DEBUG, 'sociallogin');
             Log::add('authenticateWithGoogle, google code? ', Log::DEBUG, 'sociallogin');
@@ -227,7 +247,7 @@ class PlgAuthenticationSociallogin extends CMSPlugin
 
         } else {
             Log::add('authenticateWithGoogle, step [7]', Log::DEBUG, 'sociallogin');
-            // Redirect to Google's OAuth 2.0 server
+            // Redirect to Google's OAuth 2.0 server !!
             $authUrl = $client->createAuthUrl();
             Log::add('authenticateWithGoogle, authUrl [' . $authUrl . ']', Log::DEBUG, 'sociallogin');
             header('Location: ' . filter_var($authUrl, FILTER_SANITIZE_URL));
@@ -236,6 +256,7 @@ class PlgAuthenticationSociallogin extends CMSPlugin
 
     }
 
+    // Used after the returned call back login redirection and success Google OAuth authentication
     private function loginOrRegisterUser($email, $name, &$response)
     {
         // Use Joomla's User API to find or create the user
@@ -279,5 +300,5 @@ class PlgAuthenticationSociallogin extends CMSPlugin
         // Load Facebook SDK and set credentials
         // Verify token and get user info
         // Set Joomla user information and status in $response
-    }
+    } 
 }
