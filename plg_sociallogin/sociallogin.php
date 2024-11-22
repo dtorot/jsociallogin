@@ -8,8 +8,15 @@ use Joomla\CMS\Log\Log;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Router\Route;
 
+/* use Joomla\CMS\Authentication\Authentication;
+use Joomla\CMS\User\User;
+use Joomla\Event\SubscriberInterface;
+ */
 
-class PlgAuthenticationSociallogin extends CMSPlugin
+use Joomla\CMS\Authentication\Authentication;
+use Joomla\Event\Dispatcher;
+
+class PlgAuthenticationSociallogin extends CMSPlugin //implements SubscriberInterface
 {
     public function __construct(&$subject, $config)
     {
@@ -27,6 +34,14 @@ class PlgAuthenticationSociallogin extends CMSPlugin
         );     
     }
 
+/* 	public static function getSubscribedEvents(): array
+	{
+		return [
+			'onUserAuthenticate' => 'onUserAuthenticate',
+		];
+	}
+ */
+
     public function onAfterInitialise()
     {
         Log::add('onAfterInitialise...', Log::DEBUG, 'sociallogin');
@@ -34,7 +49,7 @@ class PlgAuthenticationSociallogin extends CMSPlugin
 
     public function onAfterRoute()
     {
-        //Log::add('onAfterRoute...', Log::DEBUG, 'sociallogin');
+        Log::add('onAfterRoute...', Log::DEBUG, 'sociallogin');
         // Check if the current request is the OAuth callback
         /*
         $app = Factory::getApplication();
@@ -62,6 +77,21 @@ class PlgAuthenticationSociallogin extends CMSPlugin
             Log::add('onAfterRoute, /profile? call from google OAuth...', Log::DEBUG, 'sociallogin');
         }*/
     }
+
+/*     public function onUserAfterLogin($options, $result)
+    {
+        $app = \Joomla\CMS\Factory::getApplication();
+
+        // Redirect based on user role
+        if ($result['status'] === true) {
+            $user = $options['user'];
+            if (in_array('Administrator', $user->groups)) {
+                $app->redirect('administrator/index.php');
+            } else {
+                $app->redirect('index.php?option=com_users&view=profile');
+            }
+        }
+    } */
     
     //empty $options parameter must be used by joomla onUserAuthenticate declaration
     public function onUserAuthenticate($credentials, $options, &$response)
@@ -123,7 +153,34 @@ class PlgAuthenticationSociallogin extends CMSPlugin
             $response->username = $user->username;
             $response->email = $user->email;
             $response->fullname = $user->name;
-            //$response->message = 'Sesión iniciada...';           
+            //$response->message = 'Sesión iniciada...';   
+            
+/*             $auth = new Authentication;        
+            $auth->authenticate($credentials, $options); */
+
+/*            if ($response->status === Authentication::STATUS_SUCCESS) {
+                // Create user session
+                $user = Factory::getUser($response->username);
+                $app->setUser($user);
+        
+                // Prepare options and result for the event
+                $options = ['remember' => $options['remember'] ?? false];
+                $result = [
+                    'status'  => true,
+                    'message' => 'Login successful',
+                    'user'    => $user
+                ];
+        
+                // Dispatch the onUserAfterLogin event
+                //$dispatcher = $app->getDispatcher();
+                //$dispatcher->dispatch('onUserAfterLogin', [$options, $result]);
+                Log::add('onUserAuthenticate, User logged in successfully...', Log::DEBUG, 'sociallogin');
+
+                //return true;
+            }*/
+
+
+
             $response->status = JAuthentication::STATUS_SUCCESS;
             
             Log::add('onUserAuthenticate, User logged in successfully...', Log::DEBUG, 'sociallogin');
@@ -148,7 +205,7 @@ class PlgAuthenticationSociallogin extends CMSPlugin
             //$app->redirect($userProfileUrl);
             //$app->redirect('/bitacora');
             
-            return;
+            return true;
         }
 
 /*         if ($credentials['started'] == true) {
