@@ -32,6 +32,14 @@ class PlgSystemSocialLoginCallBack extends CMSPlugin
         );     
     }
 
+    public function onUserAfterLogin($options)
+    {
+        
+        Log::add('onAfterLogin...', Log::DEBUG, 'sociallogincallback');
+        $app = Factory::getApplication();
+        $app->redirect('/bitacora');
+    }
+
     public function onAfterInitialise()
     {
 
@@ -281,7 +289,7 @@ class PlgSystemSocialLoginCallBack extends CMSPlugin
             Log::add('loginOrRegisterUser, user password [' . $user->password . ']', Log::DEBUG, 'sociallogincallback');
 
             // Manual session start, password is not needed
-            $credentials = ['username' => $user->username, 'password' => $token, 'csrfTokenName' => $csrfTokenName, 'csrfTokenValue' => $csrfTokenValue, 'started' => false]; 
+            $credentials = ['username' => $user->username, 'password' => $user->password, 'csrfTokenName' => $csrfTokenName, 'csrfTokenValue' => $csrfTokenValue, 'started' => false]; 
 
             //if (!Session::checkToken($returnedCSRFToken)) {
                 // Token is invalid; handle the error
@@ -290,6 +298,7 @@ class PlgSystemSocialLoginCallBack extends CMSPlugin
             //}else{
             // Joomla redirect this call to the onUserAuthenticate() of the authentication plugin sociallogin.php
             $result = $app->login($credentials, $options);
+            Log::add('loginOrRegisterUser,  $result of $app->login() call[' . $result . ']', Log::DEBUG, 'sociallogincallback');
             //$result = $app->login($credentials, ['silent' => false, 'return' => '/bitacora']);
             //}
             //$response->status = JAuthentication::STATUS_SUCCESS;

@@ -8,13 +8,8 @@ use Joomla\CMS\Log\Log;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Router\Route;
 
-/* use Joomla\CMS\Authentication\Authentication;
-use Joomla\CMS\User\User;
-use Joomla\Event\SubscriberInterface;
- */
-
 use Joomla\CMS\Authentication\Authentication;
-use Joomla\Event\Dispatcher;
+
 
 class PlgAuthenticationSociallogin extends CMSPlugin //implements SubscriberInterface
 {
@@ -33,14 +28,6 @@ class PlgAuthenticationSociallogin extends CMSPlugin //implements SubscriberInte
             array('sociallogin')  // Custom category to identify your plugin’s messages
         );     
     }
-
-/* 	public static function getSubscribedEvents(): array
-	{
-		return [
-			'onUserAuthenticate' => 'onUserAuthenticate',
-		];
-	}
- */
 
     public function onAfterInitialise()
     {
@@ -183,7 +170,9 @@ class PlgAuthenticationSociallogin extends CMSPlugin //implements SubscriberInte
 
             $response->status = JAuthentication::STATUS_SUCCESS;
             
-            Log::add('onUserAuthenticate, User logged in successfully...', Log::DEBUG, 'sociallogin');
+            Log::add('onUserAuthenticate, User logged in successfully...['. $response->status . ']', Log::DEBUG, 'sociallogin');
+            //$app->enqueueMessage('Welcome back, ' . $response->username, 'success');
+
 
             /* $credentials = ['started' => true, 'username' => $response->username]; 
             $result = $app->login($credentials, ['silent' => false, 'return' => '/bitacora']);  */
@@ -204,7 +193,32 @@ class PlgAuthenticationSociallogin extends CMSPlugin //implements SubscriberInte
             // Redirect to the user profile
             //$app->redirect($userProfileUrl);
             //$app->redirect('/bitacora');
+
+/*             $options = ['remember' => $options['remember'] ?? false];
+            $result = [
+                    'status'  => true,
+                    'message' => 'Login successful',
+                    'user'    => $user
+                ];
+            $dispatcher = $app->getDispatcher();
+            $dispatcher->dispatch('onUserAfterLogin'); */
+
+
+            // Trigger the `onUserAfterLogin` event
+            //$dispatcher = Dispatcher::getInstance();
+            /* $eventData = [
+                'response' => $response,
+                'user' => $user,
+                'options' => $options,
+            ]; */
+
+            //$dispatcher->dispatch('onUserAfterLogin', $eventData);
             
+            //$dispatcher = Joomla\CMS\Factory::getApplication()->getDispatcher();
+            //$event = new Joomla\CMS\Event\User\AfterLoginEvent($evenData);
+            //$dispatcher->dispatch('onUserAfterLogin', $eventData);
+
+
             return true;
         }
 
