@@ -12,6 +12,10 @@
             <field name="google_client_id" type="text" label="Google Client ID" description="Enter your Google Client ID" />
             <field name="google_client_secret" type="password" label="Google Client Secret" description="Enter your Google Client Secret" />
             <field name="google_client_redirect_uri" type="text" label="Google Client Redirect URI" description="URL Google redirects back to after login" />
+            <field name="debug" type="radio" label="Enable Debug Logging" description="Enable or disable debug logging for this plugin." default="0" class="btn-group">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+            </field>
         </fieldset>
     </fields>
 </config>
